@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', 'Poppins', sans-serif;
+  background-color: #FFFFFF;
+  color: #000000;
+}
+
+a {
+  color: #3B82F6;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #1E40AF;
+}
+
+button {
+  border-radius: 0.5rem;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid #E5E5E5;
+}
+
+th {
+  background-color: #F5F5F5;
+  font-weight: 600;
+}
+
+tr:hover {
+  background-color: #FAFAFA;
+}
