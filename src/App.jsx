@@ -5,8 +5,11 @@ import { LanguageProvider, useLanguage } from './context/LanguageContext'
 import { Login } from './pages/Login'
 import { EmployeeDashboard } from './pages/EmployeeDashboard'
 import { ManagerDashboard } from './pages/ManagerDashboard'
+import { AdminDashboard } from './pages/AdminDashboard'
+import { ReadOnlyDashboard } from './pages/ReadOnlyDashboard'
+import { ROLES, PERMISSIONS, READONLY_DASHBOARD_ROLES, EMPLOYEE_ROLES } from './config/roleConfig'
 
-function ProtectedRoute({ children, requiredRole = null }) {
+function ProtectedRoute({ children, allowedRoles = null }) {
   const { user, userRole, loading, authError } = useAuth()
 
   if (loading) {
@@ -39,7 +42,8 @@ function ProtectedRoute({ children, requiredRole = null }) {
     )
   }
 
-  if (requiredRole && userRole !== requiredRole) {
+  // Check if user has permission to access this route
+  if (allowedRoles && !allowedRoles.includes(userRole)) {
     return <Navigate to="/" replace />
   }
 
@@ -48,44 +52,76 @@ function ProtectedRoute({ children, requiredRole = null }) {
 
 function AppRoutes() {
   const { user, userRole, loading } = useAuth()
-  const { t } = useLanguage()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-xl text-gray-600">Loading...</div>
+      </div>
+    )
+  }
 
   return (
     <Routes>
+      {/* Login Page */}
       <Route
         path="/"
         element={
-          loading
-            ? (
-              <div className="min-h-screen flex items-center justify-center">
-                <div className="text-xl text-gray-600">Loading...</div>
-              </div>
-            )
-            : user
-              ? (userRole === 'manager'
+          user
+            ? userRole === ROLES.ADMIN
+              ? <Navigate to="/admin-dashboard" replace />
+              : userRole === ROLES.MANAGER
                 ? <Navigate to="/manager-dashboard" replace />
-                : userRole === 'employee'
-                  ? <Navigate to="/employee-dashboard" replace />
-                  : <div className="min-h-screen flex items-center justify-center"><div className="text-xl text-gray-600">{t.loadingProfile}</div></div>)
-              : <Login />
+                : READONLY_DASHBOARD_ROLES.includes(userRole)
+                  ? <Navigate to="/dashboard" replace />
+                  : EMPLOYEE_ROLES.includes(userRole)
+                    ? <Navigate to="/employee-dashboard" replace />
+                    : <Navigate to="/" replace />
+            : <Login />
         }
       />
+
+      {/* Admin Dashboard */}
       <Route
-        path="/employee-dashboard"
+        path="/admin-dashboard"
         element={
-          <ProtectedRoute requiredRole="employee">
-            <EmployeeDashboard />
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+            <AdminDashboard />
           </ProtectedRoute>
         }
       />
+
+      {/* Manager Dashboard */}
       <Route
         path="/manager-dashboard"
         element={
-          <ProtectedRoute requiredRole="manager">
+          <ProtectedRoute allowedRoles={[ROLES.MANAGER]}>
             <ManagerDashboard />
           </ProtectedRoute>
         }
       />
+
+      {/* Read-Only Dashboard (Retail Manager, CEO, HR) */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={READONLY_DASHBOARD_ROLES}>
+            <ReadOnlyDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Employee Dashboard */}
+      <Route
+        path="/employee-dashboard"
+        element={
+          <ProtectedRoute allowedRoles={EMPLOYEE_ROLES}>
+            <EmployeeDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Catch all - redirect to home */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

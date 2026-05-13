@@ -1,33 +1,45 @@
 import React from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { useLanguage } from '../context/LanguageContext'
+import { ROLES, READONLY_DASHBOARD_ROLES, EMPLOYEE_ROLES } from '../config/roleConfig'
 
 export function Sidebar() {
   const navigate = useNavigate()
   const location = useLocation()
   const { userRole } = useAuth()
-  const { t, isRTL } = useLanguage()
 
   const current = `${location.pathname}${location.search}`
   const isActive = (path) => current === path
 
-  const navItems =
-    userRole === 'manager'
-      ? [
-          { path: '/manager-dashboard?tab=overview', label: t.managerDashboard, icon: '📊' },
-          { path: '/manager-dashboard?tab=requests', label: t.leaveRequests, icon: '📋' },
-          { path: '/manager-dashboard?tab=employees', label: t.employees, icon: '👥' },
-        ]
-      : [
-          { path: '/employee-dashboard?tab=overview', label: t.employeeDashboard, icon: '📊' },
-          { path: '/employee-dashboard?tab=requests', label: t.leaveRequests, icon: '📋' },
-        ]
+  let navItems = []
+
+  if (userRole === ROLES.ADMIN) {
+    navItems = [
+      { path: '/admin-dashboard?tab=users', label: 'User Management', icon: '👥' },
+      { path: '/admin-dashboard?tab=leave', label: 'Leave Management', icon: '📋' },
+    ]
+  } else if (userRole === ROLES.MANAGER) {
+    navItems = [
+      { path: '/manager-dashboard?tab=overview', label: 'Dashboard', icon: '📊' },
+      { path: '/manager-dashboard?tab=requests', label: 'Leave Requests', icon: '📋' },
+      { path: '/manager-dashboard?tab=employees', label: 'Employees', icon: '👥' },
+    ]
+  } else if (READONLY_DASHBOARD_ROLES.includes(userRole)) {
+    navItems = [
+      { path: '/dashboard?tab=employees', label: 'Employees', icon: '👥' },
+      { path: '/dashboard?tab=leaves', label: 'Leave Requests', icon: '📋' },
+    ]
+  } else if (EMPLOYEE_ROLES.includes(userRole)) {
+    navItems = [
+      { path: '/employee-dashboard?tab=overview', label: 'Dashboard', icon: '📊' },
+      { path: '/employee-dashboard?tab=requests', label: 'Leave Requests', icon: '📋' },
+    ]
+  }
 
   return (
-    <aside className={`w-full lg:w-64 bg-card-bg ${isRTL ? 'lg:border-l' : 'lg:border-r'} border-border-color lg:min-h-screen`}>
+    <aside className="w-full lg:w-64 bg-card-bg lg:border-r border-border-color lg:min-h-screen">
       <div className="p-3 sm:p-4 lg:p-6 space-y-3">
-        <h2 className="text-base lg:text-lg font-bold text-primary">{t.language}</h2>
+        <h2 className="text-base lg:text-lg font-bold text-primary">Navigation</h2>
         <nav className="flex lg:block gap-2 overflow-x-auto pb-1 lg:pb-0 whitespace-nowrap">
           {navItems.map((item, index) => (
             <button

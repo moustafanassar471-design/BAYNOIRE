@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react'
 import {
-  createEmployeeByManager,
+  createUserByAdmin,
   getEmployees,
   updateEmployeeLeaveBalance,
+  validatePassword,
 } from '../services/firebaseDataService'
-import { useLanguage } from '../context/LanguageContext'
-import { sendEmployeeResetEmail, setEmployeePassword } from '../services/firebaseAdminService'
+import { sendEmployeeResetEmail } from '../services/firebaseAdminService'
 
 export function EmployeeList({ onDataChange }) {
-  const { t } = useLanguage()
   const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [successMsg, setSuccessMsg] = useState('')
   const [editingId, setEditingId] = useState(null)
   const [newBalance, setNewBalance] = useState('')
   const [adding, setAdding] = useState(false)
@@ -19,10 +19,9 @@ export function EmployeeList({ onDataChange }) {
     name: '',
     email: '',
     password: '',
-    leaveBalance: 20,
+    leaveBalance: 0,
   })
   const [resetLoadingId, setResetLoadingId] = useState(null)
-  const [passwordDrafts, setPasswordDrafts] = useState({})
 
   useEffect(() => {
     fetchEmployees()
@@ -44,21 +43,38 @@ export function EmployeeList({ onDataChange }) {
   const handleAddEmployee = async (e) => {
     e.preventDefault()
     if (!newEmployee.name || !newEmployee.email || !newEmployee.password) {
-      setError(t.fillAllFields)
+      setError('Please fill in all fields')
       return
     }
+
+    // Validate password
+    const validation = validatePassword(newEmployee.password)
+    if (!validation.valid) {
+      setError(validation.error)
+      return
+    }
+
     setAdding(true)
     setError('')
+    setSuccessMsg('')
+
     try {
-      await createEmployeeByManager({
+      const result = await createUserByAdmin({
         name: newEmployee.name,
         email: newEmployee.email,
         password: newEmployee.password,
-        leaveBalance: parseInt(newEmployee.leaveBalance, 10) || 20,
+        role: 'employee',
+        leaveBalance: parseInt(newEmployee.leaveBalance, 10) || 0,
       })
-      setNewEmployee({ name: '', email: '', password: '', leaveBalance: 20 })
-      await fetchEmployees()
-      if (onDataChange) onDataChange()
+
+      if (result.success) {
+        setSuccessMsg(`Employee ${newEmployee.name} created successfully!`)
+        setNewEmployee({ name: '', email: '', password: '', leaveBalance: 0 })
+        await fetchEmployees()
+        if (onDataChange) onDataChange()
+      } else {
+        setError(result.error)
+      }
     } catch (err) {
       setError(err.message)
     } finally {
@@ -81,6 +97,7 @@ export function EmployeeList({ onDataChange }) {
       setEditingId(null)
       setNewBalance('')
       setError('')
+      setSuccessMsg('Leave balance updated successfully')
       if (onDataChange) onDataChange()
     } catch (err) {
       setError(err.message)
@@ -90,9 +107,10 @@ export function EmployeeList({ onDataChange }) {
   const handleSendReset = async (email, employeeId) => {
     setResetLoadingId(employeeId)
     setError('')
+    setSuccessMsg('')
     try {
       await sendEmployeeResetEmail(email)
-      setError(`Password reset link sent to ${email}`)
+      setSuccessMsg(`Password reset link sent to ${email}`)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -100,50 +118,31 @@ export function EmployeeList({ onDataChange }) {
     }
   }
 
-  const handleSetPassword = async (employeeId) => {
-    const draft = passwordDrafts[employeeId] || ''
-    if (draft.length < 6) {
-      setError('Password must be at least 6 characters')
-      return
-    }
-    setResetLoadingId(employeeId)
-    setError('')
-    try {
-      await setEmployeePassword(employeeId, draft)
-      setPasswordDrafts((prev) => ({ ...prev, [employeeId]: '' }))
-      setError('Password updated successfully')
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setResetLoadingId(null)
-    }
-  }
-
-  if (loading) return <div className="p-6 text-center text-gray-500">{t.loading}</div>
+  if (loading) return <div className="p-6 text-center text-gray-500">Loading employees...</div>
 
   return (
     <div className="bg-card-bg rounded-lg shadow-sm border border-border-color overflow-hidden">
       <div className="p-6 border-b border-border-color">
-        <h2 className="text-xl font-bold text-primary mb-4">{t.employees}</h2>
+        <h2 className="text-xl font-bold text-primary mb-4">Employees</h2>
 
         <form onSubmit={handleAddEmployee} className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2 sm:gap-3">
           <input
             type="text"
-            placeholder={t.name}
+            placeholder="Full Name"
             value={newEmployee.name}
             onChange={(e) => setNewEmployee((p) => ({ ...p, name: e.target.value }))}
             className="px-3 py-2 border rounded-lg"
           />
           <input
             type="email"
-            placeholder={t.email}
+            placeholder="Email"
             value={newEmployee.email}
             onChange={(e) => setNewEmployee((p) => ({ ...p, email: e.target.value }))}
             className="px-3 py-2 border rounded-lg"
           />
           <input
             type="password"
-            placeholder={t.password}
+            placeholder="Password (min 8 chars)"
             value={newEmployee.password}
             onChange={(e) => setNewEmployee((p) => ({ ...p, password: e.target.value }))}
             className="px-3 py-2 border rounded-lg"
@@ -151,7 +150,7 @@ export function EmployeeList({ onDataChange }) {
           <input
             type="number"
             min="0"
-            placeholder={t.leaveBalance}
+            placeholder="Leave Balance"
             value={newEmployee.leaveBalance}
             onChange={(e) => setNewEmployee((p) => ({ ...p, leaveBalance: e.target.value }))}
             className="px-3 py-2 border rounded-lg"
@@ -161,30 +160,33 @@ export function EmployeeList({ onDataChange }) {
             disabled={adding}
             className="px-4 py-2 bg-accent text-white rounded-lg disabled:opacity-50"
           >
-            {adding ? t.creatingAccount : t.addEmployee}
+            {adding ? 'Creating...' : 'Add Employee'}
           </button>
         </form>
       </div>
 
       {error && <div className="mx-6 mt-4 p-3 bg-red-100 text-red-700 rounded-lg">{error}</div>}
+      {successMsg && (
+        <div className="mx-6 mt-4 p-3 bg-green-100 text-green-700 rounded-lg">{successMsg}</div>
+      )}
 
       <div className="overflow-x-auto mt-4">
         <table className="w-full min-w-[980px]">
           <thead>
             <tr className="bg-gray-50 border-b border-border-color">
-              <th className="px-6 py-4 text-left text-sm font-semibold text-primary">{t.name}</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-primary">{t.email}</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-primary">Name</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-primary">Email</th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-primary">Login</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-primary">Password</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-primary">{t.leaveBalance}</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-primary">{t.actions}</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-primary">Password Reset</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-primary">Leave Balance</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-primary">Actions</th>
             </tr>
           </thead>
           <tbody>
             {employees.length === 0 ? (
               <tr>
                 <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
-                  {t.noEmployees}
+                  No employees found
                 </td>
               </tr>
             ) : (
@@ -194,33 +196,13 @@ export function EmployeeList({ onDataChange }) {
                   <td className="px-6 py-4 text-sm text-primary">{employee.email}</td>
                   <td className="px-6 py-4 text-sm text-primary">{employee.email}</td>
                   <td className="px-6 py-4 text-sm text-primary">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="password"
-                        value={passwordDrafts[employee.id] || ''}
-                        onChange={(e) =>
-                          setPasswordDrafts((prev) => ({ ...prev, [employee.id]: e.target.value }))
-                        }
-                        placeholder="New password"
-                        className="w-32 px-2 py-1 border rounded text-xs"
-                      />
-                      <button
-                        onClick={() => handleSetPassword(employee.id)}
-                        disabled={resetLoadingId === employee.id}
-                        className="px-2 py-1 bg-purple-600 text-white rounded text-xs disabled:opacity-50"
-                      >
-                        {resetLoadingId === employee.id ? 'Saving...' : 'Set'}
-                      </button>
-                    </div>
-                    <div className="mt-2">
                     <button
                       onClick={() => handleSendReset(employee.email, employee.id)}
                       disabled={resetLoadingId === employee.id}
                       className="px-2 py-1 bg-indigo-600 text-white rounded text-xs disabled:opacity-50"
                     >
-                      {resetLoadingId === employee.id ? 'Sending...' : 'Reset'}
+                      {resetLoadingId === employee.id ? 'Sending...' : 'Send Link'}
                     </button>
-                    </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-primary">
                     {editingId === employee.id ? (
@@ -232,9 +214,7 @@ export function EmployeeList({ onDataChange }) {
                         autoFocus
                       />
                     ) : (
-                      <span className="font-semibold">
-                        {employee.leave_balance} {t.days}
-                      </span>
+                      <span className="font-semibold">{employee.leave_balance} days</span>
                     )}
                   </td>
                   <td className="px-6 py-4 text-sm space-x-2">
@@ -244,7 +224,7 @@ export function EmployeeList({ onDataChange }) {
                           onClick={() => handleUpdateBalance(employee.id)}
                           className="px-3 py-1 bg-success text-white rounded-lg text-xs font-medium"
                         >
-                          {t.save}
+                          Save
                         </button>
                         <button
                           onClick={() => {
@@ -253,7 +233,7 @@ export function EmployeeList({ onDataChange }) {
                           }}
                           className="px-3 py-1 bg-gray-400 text-white rounded-lg text-xs font-medium"
                         >
-                          {t.cancel}
+                          Cancel
                         </button>
                       </>
                     ) : (
@@ -264,7 +244,7 @@ export function EmployeeList({ onDataChange }) {
                         }}
                         className="px-3 py-1 bg-accent text-white rounded-lg text-xs font-medium"
                       >
-                        {t.edit}
+                        Edit
                       </button>
                     )}
                   </td>

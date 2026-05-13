@@ -2,6 +2,7 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
+import { ROLE_DISPLAY_NAMES } from '../config/roleConfig'
 
 export function Navbar() {
   const navigate = useNavigate()
@@ -18,7 +19,7 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 flex flex-wrap gap-3 justify-between items-center">
         <div className="flex items-center space-x-2 min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold text-white truncate">BAYNOIRE</h1>
-          <span className="text-xs sm:text-sm text-gray-400 truncate">{t.hrManagement}</span>
+          <span className="text-xs sm:text-sm text-gray-400 truncate">HR Management System</span>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4 ml-auto">
@@ -26,7 +27,7 @@ export function Navbar() {
             onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
             className="px-3 py-1 border border-gray-500 rounded-lg text-xs"
           >
-            {t.lang}
+            {language === 'en' ? 'AR' : 'EN'}
           </button>
           {user && (
             <>
@@ -38,14 +39,16 @@ export function Navbar() {
                 </div>
                 <div className="hidden sm:block">
                   <p className="text-xs sm:text-sm font-medium max-w-[120px] sm:max-w-[220px] truncate">{user.email}</p>
-                  <p className="text-xs text-gray-400 capitalize">{userRole}</p>
+                  <p className="text-xs text-gray-400">
+                    {ROLE_DISPLAY_NAMES[userRole] || userRole}
+                  </p>
                 </div>
               </div>
               <button
                 onClick={handleLogout}
                 className="px-3 sm:px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-xs sm:text-sm font-medium transition"
               >
-                {t.logout}
+                Logout
               </button>
             </>
           )}

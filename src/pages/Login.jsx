@@ -5,13 +5,11 @@ import { useLanguage } from '../context/LanguageContext'
 
 export function Login() {
   const navigate = useNavigate()
-  const { signIn, signUp } = useAuth()
+  const { signIn } = useAuth()
   const { t, language } = useLanguage()
-  const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [formData, setFormData] = useState({
-    name: '',
     email: '',
     password: '',
   })
@@ -27,31 +25,15 @@ export function Login() {
     setLoading(true)
     setError('')
 
-    const result = await signIn(formData.email, formData.password)
-    if (result.success) {
-      navigate('/')
-    } else {
-      setError(result.error)
-    }
-    setLoading(false)
-  }
-
-  const handleSignUp = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-
-    if (!formData.name || !formData.email || !formData.password) {
-      setError(t.fillAllFields)
+    if (!formData.email || !formData.password) {
+      setError('Please enter email and password')
       setLoading(false)
       return
     }
 
-    const result = await signUp(formData.email, formData.password, formData.name)
+    const result = await signIn(formData.email, formData.password)
     if (result.success) {
-      setError(t.signupSuccess)
-      setIsSignUp(false)
-      setFormData({ name: '', email: '', password: '' })
+      navigate('/')
     } else {
       setError(result.error)
     }
@@ -65,41 +47,21 @@ export function Login() {
           {/* Logo */}
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-black mb-2">BAYNOIRE</h1>
-            <p className="text-gray-600">{t.hrManagement}</p>
+            <p className="text-gray-600">HR Management System</p>
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className={`mb-4 p-4 rounded-lg ${
-              error.includes('successful')
-                ? 'bg-green-100 text-green-800'
-                : 'bg-red-100 text-red-800'
-            }`}>
+            <div className="mb-4 p-4 rounded-lg bg-red-100 text-red-800">
               {error}
             </div>
           )}
 
           {/* Form */}
-          <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-4">
-            {isSignUp && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t.name}
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder={t.name}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            )}
-
+          <form onSubmit={handleSignIn} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t.email}
+                Email
               </label>
               <input
                 type="email"
@@ -113,7 +75,7 @@ export function Login() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t.password}
+                Password
               </label>
               <input
                 type="password"
@@ -130,25 +92,13 @@ export function Login() {
               disabled={loading}
               className="w-full py-2 bg-black hover:bg-gray-900 text-white rounded-lg font-semibold transition disabled:opacity-50"
             >
-              {loading ? (isSignUp ? t.creatingAccount : t.loggingIn) : isSignUp ? t.signup : t.login}
+              {loading ? 'Logging In...' : 'Login'}
             </button>
           </form>
 
-          {/* Toggle SignUp/SignIn */}
-          <div className="mt-6 text-center">
-            <p className="text-gray-600 text-sm">
-              {isSignUp ? t.alreadyHaveAccount : t.dontHaveAccount}
-              <button
-                onClick={() => {
-                  setIsSignUp(!isSignUp)
-                  setError('')
-                  setFormData({ name: '', email: '', password: '' })
-                }}
-                className="ml-2 text-blue-600 hover:text-blue-700 font-semibold"
-              >
-                {isSignUp ? t.login : t.signup}
-              </button>
-            </p>
+          {/* Info Message */}
+          <div className="mt-6 text-center text-sm text-gray-600">
+            <p>Contact your administrator to create an account</p>
           </div>
         </div>
       </div>

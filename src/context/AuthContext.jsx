@@ -8,6 +8,7 @@ import {
 } from 'firebase/auth'
 import { auth } from '../services/firebase'
 import { createUserProfile, getUserProfile } from '../services/firebaseDataService'
+import { DEFAULT_ADMIN, ROLES } from '../config/roleConfig'
 
 const AuthContext = createContext()
 
@@ -16,8 +17,46 @@ export function AuthProvider({ children }) {
   const [userRole, setUserRole] = useState(null)
   const [loading, setLoading] = useState(true)
   const [authError, setAuthError] = useState('')
+  const [isInitialized, setIsInitialized] = useState(false)
+
+  // Auto-create default admin account on first initialization
+  useEffect(() => {
+    const initializeDefaultAdmin = async () => {
+      try {
+        const adminProfile = await getUserProfile('admin-default')
+        if (!adminProfile) {
+          // Try to create default admin
+          const credential = await createUserWithEmailAndPassword(
+            auth,
+            DEFAULT_ADMIN.email,
+            DEFAULT_ADMIN.password
+          )
+          await createUserProfile(credential.user, {
+            name: DEFAULT_ADMIN.name,
+            role: DEFAULT_ADMIN.role,
+            leaveBalance: 0,
+          })
+          // Sign out after creation
+          await firebaseSignOut(auth)
+        }
+      } catch (error) {
+        // Admin might already exist or error creating it
+        if (error?.code === 'auth/email-already-in-use') {
+          // Admin already exists, which is fine
+        } else {
+          console.error('Error initializing default admin:', error)
+        }
+      } finally {
+        setIsInitialized(true)
+      }
+    }
+
+    initializeDefaultAdmin()
+  }, [])
 
   useEffect(() => {
+    if (!isInitialized) return
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setAuthError('')
       setUser(firebaseUser ?? null)
@@ -29,7 +68,7 @@ export function AuthProvider({ children }) {
       setLoading(false)
     })
     return unsubscribe
-  }, [])
+  }, [isInitialized])
 
   const fetchUserRole = async (firebaseUser) => {
     try {
@@ -39,10 +78,12 @@ export function AuthProvider({ children }) {
         return
       }
 
-      // Auto-heal missing profile document after successful auth login.
+      // Auto-heal missing profile document after successful auth login
+      // Default to employee role for safety
       await createUserProfile(firebaseUser, {
         name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
         role: 'employee',
+        leaveBalance: 0,
       })
       setUserRole('employee')
     } catch (error) {
@@ -50,36 +91,6 @@ export function AuthProvider({ children }) {
         setAuthError('Firestore rules are blocking profile access. Please update your Firestore rules.')
       }
       console.error('Error fetching user role:', error)
-    }
-  }
-
-  const signUp = async (email, password, name) => {
-    try {
-      const credential = await createUserWithEmailAndPassword(auth, email, password)
-      if (name?.trim()) {
-        await updateProfile(credential.user, { displayName: name.trim() })
-      }
-      await createUserProfile(credential.user, { name, role: 'employee' })
-      return { success: true, user: credential.user }
-    } catch (error) {
-      if (
-        error?.status === 429 ||
-        error?.code === 'auth/too-many-requests' ||
-        error?.message?.toLowerCase().includes('rate limit') ||
-        error?.message?.includes('429')
-      ) {
-        return {
-          success: false,
-          error: 'Too many signup attempts. Please wait 60 seconds, then try again.',
-        }
-      }
-      if (error?.code === 'auth/operation-not-allowed') {
-        return {
-          success: false,
-          error: 'Email/Password sign-up is disabled in Firebase. Enable it in Authentication > Sign-in method.',
-        }
-      }
-      return { success: false, error: error.message }
     }
   }
 
@@ -95,7 +106,7 @@ export function AuthProvider({ children }) {
       ) {
         return {
           success: false,
-          error: 'Invalid email or password. If this is a new account, sign up first.',
+          error: 'Invalid email or password.',
         }
       }
       return { success: false, error: error.message }
@@ -118,9 +129,9 @@ export function AuthProvider({ children }) {
     userRole,
     loading,
     authError,
-    signUp,
     signIn,
     signOut,
+    isInitialized,
   }
 
   return (
