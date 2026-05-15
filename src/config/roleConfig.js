@@ -34,6 +34,15 @@ export const EMPLOYEE_ROLES = [
   ROLES.SALES,
 ]
 
+// Manager-creatable roles - Manager can only create these roles
+export const MANAGER_CREATABLE_ROLES = [
+  ROLES.ASSISTANT_MANAGER,
+  ROLES.SENIOR_SUPERVISOR,
+  ROLES.SUPERVISOR,
+  ROLES.SENIOR_SALES,
+  ROLES.SALES,
+]
+
 // Read-only dashboard roles
 export const READONLY_DASHBOARD_ROLES = [
   ROLES.RETAIL_MANAGER,

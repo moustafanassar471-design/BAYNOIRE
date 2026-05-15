@@ -18,7 +18,7 @@ import { createUserWithEmailAndPassword, getAuth, signOut, deleteUser } from 'fi
 import { FirebaseError, deleteApp, getApps, initializeApp } from 'firebase/app'
 import { db } from './firebase'
 import { firebaseConfig } from './firebase'
-import { EMPLOYEE_ROLES } from '../config/roleConfig'
+import { EMPLOYEE_ROLES, MANAGER_CREATABLE_ROLES } from '../config/roleConfig'
 
 const usersRef = collection(db, 'users')
 const leaveRequestsRef = collection(db, 'leave_requests')
@@ -94,6 +94,17 @@ export async function createUserByAdmin({ name, email, password, role, leaveBala
       await deleteApp(createdApp)
     }
   }
+}
+
+// Create user by Manager (with role restrictions)
+export async function createUserByManager({ name, email, password, role, leaveBalance = 0 }) {
+  // Validate that the role is allowed for Manager creation
+  if (!MANAGER_CREATABLE_ROLES.includes(role)) {
+    return { success: false, error: `Manager cannot create users with role: ${role}` }
+  }
+
+  // Use the same creation logic as admin
+  return createUserByAdmin({ name, email, password, role, leaveBalance })
 }
 
 // Delete user (Admin and Manager only, with restrictions)
