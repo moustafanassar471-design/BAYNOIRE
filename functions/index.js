@@ -16,22 +16,18 @@ exports.setEmployeePassword = onCall(async (request) => {
     throw new HttpsError('invalid-argument', 'uid and newPassword are required.')
   }
 
-  if (newPassword.length < 6) {
-    throw new HttpsError('invalid-argument', 'Password must be at least 6 characters.')
+  if (newPassword.length < 8) {
+    throw new HttpsError('invalid-argument', 'Password must be at least 8 characters.')
   }
 
-  const managerDoc = await admin.firestore().collection('users').doc(auth.uid).get()
-  const managerData = managerDoc.data()
-  if (!managerData || managerData.role !== 'manager') {
-    throw new HttpsError('permission-denied', 'Only managers can change employee passwords.')
+  // Check if the caller is an admin or manager
+  const adminDoc = await admin.firestore().collection('users').doc(auth.uid).get()
+  const adminData = adminDoc.data()
+  if (!adminData || (adminData.role !== 'admin' && adminData.role !== 'manager')) {
+    throw new HttpsError('permission-denied', 'Only admin or manager can change employee passwords.')
   }
 
-  const employeeDoc = await admin.firestore().collection('users').doc(uid).get()
-  const employeeData = employeeDoc.data()
-  if (!employeeData || employeeData.role !== 'employee') {
-    throw new HttpsError('failed-precondition', 'Target user is not an employee.')
-  }
-
+  // Update the password for the target user
   await admin.auth().updateUser(uid, { password: newPassword })
 
   return { success: true }

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   createUserByManager,
   getEmployees,
@@ -10,6 +11,7 @@ import { sendEmployeeResetEmail } from '../services/firebaseAdminService'
 import { ROLE_DISPLAY_NAMES, MANAGER_CREATABLE_ROLES } from '../config/roleConfig'
 
 export function ManagerEmployeeList({ onDataChange, showLeaveForm = false, onLeaveFormToggle = null }) {
+  const navigate = useNavigate()
   const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -302,16 +304,23 @@ export function ManagerEmployeeList({ onDataChange, showLeaveForm = false, onLea
                         </button>
                       </>
                     ) : (
-                      <button
-                        onClick={() => {
-                          setEditingId(employee.id)
-                          setNewBalance(String(employee.leave_balance))
-                        }}
-                        className="px-3 py-1 bg-accent text-white rounded-lg text-xs font-medium"
-                      >
-                        Edit
-                      </button>
-                    )}
+                      <>
+                        <button
+                          onClick={() => {
+                            setEditingId(employee.id)
+                            setNewBalance(String(employee.leave_balance))
+                          }}
+                          className="px-3 py-1 bg-accent text-white rounded-lg text-xs font-medium"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => navigate(`/employee/${employee.id}`)}
+                          className="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-medium"
+                        >
+                          Details
+                        </button>
+                      </>}
                   </td>
                 </tr>
               ))

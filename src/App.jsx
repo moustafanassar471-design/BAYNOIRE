@@ -6,6 +6,7 @@ import { Login } from './pages/Login'
 import { EmployeeDashboard } from './pages/EmployeeDashboard'
 import { ManagerDashboard } from './pages/ManagerDashboard'
 import { AdminDashboard } from './pages/AdminDashboard'
+import { EmployeeDetailsPage } from './pages/EmployeeDetailsPage'
 import { ReadOnlyDashboard } from './pages/ReadOnlyDashboard'
 import { ROLES, PERMISSIONS, READONLY_DASHBOARD_ROLES, EMPLOYEE_ROLES } from './config/roleConfig'
 
@@ -97,6 +98,16 @@ function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={[ROLES.MANAGER]}>
             <ManagerDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Employee Details Page */}
+      <Route
+        path="/employee/:employeeId"
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER]}>
+            <EmployeeDetailsPage />
           </ProtectedRoute>
         }
       />

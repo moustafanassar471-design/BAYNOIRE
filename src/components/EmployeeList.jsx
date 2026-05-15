@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   createUserByAdmin,
   getEmployees,
@@ -8,6 +9,7 @@ import {
 import { sendEmployeeResetEmail } from '../services/firebaseAdminService'
 
 export function EmployeeList({ onDataChange }) {
+  const navigate = useNavigate()
   const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -19,7 +21,6 @@ export function EmployeeList({ onDataChange }) {
     name: '',
     email: '',
     password: '',
-    leaveBalance: 0,
   })
   const [resetLoadingId, setResetLoadingId] = useState(null)
 
@@ -64,12 +65,11 @@ export function EmployeeList({ onDataChange }) {
         email: newEmployee.email,
         password: newEmployee.password,
         role: 'employee',
-        leaveBalance: parseInt(newEmployee.leaveBalance, 10) || 0,
       })
 
       if (result.success) {
         setSuccessMsg(`Employee ${newEmployee.name} created successfully!`)
-        setNewEmployee({ name: '', email: '', password: '', leaveBalance: 0 })
+        setNewEmployee({ name: '', email: '', password: '' })
         await fetchEmployees()
         if (onDataChange) onDataChange()
       } else {
@@ -145,14 +145,6 @@ export function EmployeeList({ onDataChange }) {
             placeholder="Password (min 8 chars)"
             value={newEmployee.password}
             onChange={(e) => setNewEmployee((p) => ({ ...p, password: e.target.value }))}
-            className="px-3 py-2 border rounded-lg"
-          />
-          <input
-            type="number"
-            min="0"
-            placeholder="Leave Balance"
-            value={newEmployee.leaveBalance}
-            onChange={(e) => setNewEmployee((p) => ({ ...p, leaveBalance: e.target.value }))}
             className="px-3 py-2 border rounded-lg"
           />
           <button
@@ -237,15 +229,23 @@ export function EmployeeList({ onDataChange }) {
                         </button>
                       </>
                     ) : (
-                      <button
-                        onClick={() => {
-                          setEditingId(employee.id)
-                          setNewBalance(String(employee.leave_balance))
-                        }}
-                        className="px-3 py-1 bg-accent text-white rounded-lg text-xs font-medium"
-                      >
-                        Edit
-                      </button>
+                      <>
+                        <button
+                          onClick={() => {
+                            setEditingId(employee.id)
+                            setNewBalance(String(employee.leave_balance))
+                          }}
+                          className="px-3 py-1 bg-accent text-white rounded-lg text-xs font-medium"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => navigate(`/employee/${employee.id}`)}
+                          className="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-medium"
+                        >
+                          Details
+                        </button>
+                      </>
                     )}
                   </td>
                 </tr>

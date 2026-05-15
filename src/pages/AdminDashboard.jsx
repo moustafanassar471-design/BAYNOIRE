@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Navbar } from '../components/Navbar'
 import { Sidebar } from '../components/Sidebar'
+import { ChangePasswordModal } from '../components/ChangePasswordModal'
 import { useAuth } from '../context/AuthContext'
 import {
   getAllUsers,
@@ -25,6 +26,7 @@ export function AdminDashboard() {
   const [tab, setTab] = useState(searchParams.get('tab') || 'users')
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [showAddLeaveForm, setShowAddLeaveForm] = useState(false)
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
   const [selectedEmployees, setSelectedEmployees] = useState([])
   const [employees, setEmployees] = useState([])
 
@@ -33,7 +35,6 @@ export function AdminDashboard() {
     email: '',
     password: '',
     role: ROLES.EMPLOYEE,
-    leaveBalance: 0,
   })
 
   const [addLeaveData, setAddLeaveData] = useState({
@@ -94,7 +95,6 @@ export function AdminDashboard() {
         email: createFormData.email,
         password: createFormData.password,
         role: createFormData.role,
-        leaveBalance: parseInt(createFormData.leaveBalance, 10) || 0,
       })
 
       if (result.success) {
@@ -104,7 +104,6 @@ export function AdminDashboard() {
           email: '',
           password: '',
           role: ROLES.EMPLOYEE,
-          leaveBalance: 0,
         })
         setShowCreateForm(false)
         fetchUsers()
@@ -242,6 +241,12 @@ export function AdminDashboard() {
                   >
                     {showCreateForm ? 'Cancel' : 'Create New User'}
                   </button>
+                  <button
+                    onClick={() => setShowChangePasswordModal(true)}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
+                  >
+                    Change Employee Password
+                  </button>
                 </div>
 
                 {/* Create Form */}
@@ -295,19 +300,6 @@ export function AdminDashboard() {
                             </option>
                           ))}
                         </select>
-                        <input
-                          type="number"
-                          placeholder="Initial Leave Balance"
-                          min="0"
-                          value={createFormData.leaveBalance}
-                          onChange={(e) =>
-                            setCreateFormData({
-                              ...createFormData,
-                              leaveBalance: e.target.value,
-                            })
-                          }
-                          className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
                       </div>
                       <button
                         type="submit"
@@ -453,6 +445,12 @@ export function AdminDashboard() {
           </div>
         </div>
       </div>
+      {showChangePasswordModal && (
+        <ChangePasswordModal
+          onClose={() => setShowChangePasswordModal(false)}
+          onSuccess={() => fetchUsers()}
+        />
+      )}
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { Navbar } from '../components/Navbar'
 import { Sidebar } from '../components/Sidebar'
 import { LeaveTable } from '../components/LeaveTable'
 import { ManagerEmployeeList } from '../components/ManagerEmployeeList'
+import { ChangePasswordModal } from '../components/ChangePasswordModal'
 import { useLanguage } from '../context/LanguageContext'
 
 export function ManagerDashboard() {
@@ -12,6 +13,7 @@ export function ManagerDashboard() {
   const navigate = useNavigate()
   const [refreshKey, setRefreshKey] = useState(0)
   const [showAddLeaveForm, setShowAddLeaveForm] = useState(false)
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
   const tab = searchParams.get('tab') || 'overview'
 
   const handleDataChange = () => {
@@ -130,6 +132,12 @@ export function ManagerDashboard() {
                   >
                     {showAddLeaveForm ? 'Cancel' : 'Add Leave Balance'}
                   </button>
+                  <button
+                    onClick={() => setShowChangePasswordModal(true)}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
+                  >
+                    Change Employee Password
+                  </button>
                 </div>
                 <ManagerEmployeeList
                   key={refreshKey}
@@ -142,6 +150,12 @@ export function ManagerDashboard() {
           </div>
         </div>
       </div>
+      {showChangePasswordModal && (
+        <ChangePasswordModal
+          onClose={() => setShowChangePasswordModal(false)}
+          onSuccess={() => setRefreshKey((prev) => prev + 1)}
+        />
+      )}
     </div>
   )
 }

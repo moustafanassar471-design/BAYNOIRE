@@ -49,7 +49,7 @@ export async function createUserProfile(user, { name, role = 'employee', leaveBa
     email: user.email,
     name: name?.trim() || user.email?.split('@')[0] || 'User',
     role,
-    leave_balance: leaveBalance,
+    leave_balance: 0,
     created_at: serverTimestamp(),
     updated_at: serverTimestamp(),
   })
