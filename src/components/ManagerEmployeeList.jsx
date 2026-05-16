@@ -32,7 +32,6 @@ export function ManagerEmployeeList({ onDataChange, showLeaveForm = false, onLea
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
 
   const [resetLoadingId, setResetLoadingId] = useState(null)
-  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
   const [selectedEmployees, setSelectedEmployees] = useState([])
 
   const [addLeaveData, setAddLeaveData] = useState({
