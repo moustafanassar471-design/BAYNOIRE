@@ -320,7 +320,8 @@ export function ManagerEmployeeList({ onDataChange, showLeaveForm = false, onLea
                         >
                           Details
                         </button>
-                      </>}
+                      </>
+                    )}
                   </td>
                 </tr>
               ))
