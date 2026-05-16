@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { getEmployees } from '../services/firebaseDataService'
 import { setEmployeePassword } from '../services/firebaseAdminService'
 
-export function ChangePasswordModal({ onClose, onSuccess }) {
+export function ChangePasswordModal({ isOpen, onClose, onSuccess }) {
   const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('')
@@ -78,6 +78,8 @@ export function ChangePasswordModal({ onClose, onSuccess }) {
   }
 
   const selectedEmployee = employees.find((emp) => emp.id === selectedEmployeeId)
+
+  if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

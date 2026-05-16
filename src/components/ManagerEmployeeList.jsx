@@ -6,9 +6,11 @@ import {
   updateEmployeeLeaveBalance,
   validatePassword,
   addLeaveBalanceToEmployees,
+  setEmployeePassword,
 } from '../services/firebaseDataService'
 import { sendEmployeeResetEmail } from '../services/firebaseAdminService'
 import { ROLE_DISPLAY_NAMES, MANAGER_CREATABLE_ROLES } from '../config/roleConfig'
+import { ChangePasswordModal } from './ChangePasswordModal'
 
 export function ManagerEmployeeList({ onDataChange, showLeaveForm = false, onLeaveFormToggle = null }) {
   const navigate = useNavigate()
@@ -25,10 +27,12 @@ export function ManagerEmployeeList({ onDataChange, showLeaveForm = false, onLea
     email: '',
     password: '',
     role: 'assistant-manager',
-    leaveBalance: 0,
   })
 
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
+
   const [resetLoadingId, setResetLoadingId] = useState(null)
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
   const [selectedEmployees, setSelectedEmployees] = useState([])
 
   const [addLeaveData, setAddLeaveData] = useState({
@@ -77,7 +81,6 @@ export function ManagerEmployeeList({ onDataChange, showLeaveForm = false, onLea
         email: newEmployee.email,
         password: newEmployee.password,
         role: newEmployee.role,
-        leaveBalance: parseInt(newEmployee.leaveBalance, 10) || 0,
       })
 
       if (result.success) {
@@ -87,7 +90,6 @@ export function ManagerEmployeeList({ onDataChange, showLeaveForm = false, onLea
           email: '',
           password: '',
           role: 'assistant-manager',
-          leaveBalance: 0,
         })
 
         await fetchEmployees()
@@ -231,17 +233,6 @@ export function ManagerEmployeeList({ onDataChange, showLeaveForm = false, onLea
             ))}
           </select>
 
-          <input
-            type="number"
-            min="0"
-            placeholder="Leave Balance"
-            value={newEmployee.leaveBalance}
-            onChange={(e) =>
-              setNewEmployee((p) => ({ ...p, leaveBalance: e.target.value }))
-            }
-            className="px-3 py-2 border rounded-lg"
-          />
-
           <button
             type="submit"
             disabled={adding}
@@ -337,6 +328,16 @@ export function ManagerEmployeeList({ onDataChange, showLeaveForm = false, onLea
         </table>
       </div>
 
+      {/* Change Password Button */}
+      <div className="px-6 py-4 border-t border-border-color">
+        <button
+          onClick={() => setShowChangePasswordModal(true)}
+          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+        >
+          Change Employee Password
+        </button>
+      </div>
+
       {/* Leave Form */}
       {showLeaveForm && (
         <div className="border-t p-6 bg-gray-50">
@@ -381,6 +382,17 @@ export function ManagerEmployeeList({ onDataChange, showLeaveForm = false, onLea
           </form>
         </div>
       )}
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        isOpen={showChangePasswordModal}
+        onClose={() => setShowChangePasswordModal(false)}
+        onSuccess={() => {
+          setShowChangePasswordModal(false)
+          fetchEmployees()
+          onDataChange?.()
+        }}
+      />
     </div>
   )
 }
